@@ -15,6 +15,7 @@ No installation required! Simply copy the Lib0 class into your project:
 Copy the entire Lib0 class definition from above into your project
 
 ## Quick Start
+```
 from lib0 import Lib0, dict2lib0, lib02dict
 
 #Create a new Lib0 object
@@ -33,26 +34,33 @@ wrapped = dict2lib0(data)
 
 print(wrapped.app.version)  # "1.0"
 print(wrapped.app.settings.debug)  # True
-
+```
 
 ## Core Usage
 ### Basic Attribute Access
+```
 obj = Lib0()
 
 ### Set values
 obj.name = "Lib0"
 obj.version = 1.0
 obj.meta.tags = ["python", "wrapper", "utility"]
+```
 
 ### Get values
+```
 print(obj.name)  # "Lib0"
 print(obj.meta.tags[0])  # "python"
+```
 
 ### Auto-creation of nested structures
+```
 obj.config.database.host = "localhost"
 obj.config.database.port = 5432
+```
 
 ### Type Conversion Methods
+```
 obj = Lib0("42")
 
 #Convert wrapped values
@@ -67,8 +75,10 @@ print(obj.list())  # [1, 2, 3]
 
 obj = Lib0({"a": 1, "b": 2})
 print(obj.dict())  # {"a": 1, "b": 2}
+```
 
 ### Operator Support
+```
 a = Lib0(10)
 b = Lib0(5)
 
@@ -85,8 +95,10 @@ print(a == 10) # True
 #In-place operations
 a += 5
 print(a)  # 15
+```
 
 ### Dictionary-like Behavior
+```
 obj = Lib0({"users": {"john": {"age": 30}}})
 
 #Square bracket access
@@ -102,12 +114,15 @@ print("john" in obj.users)  # True
 #Iteration
 for key in obj.users:
     print(key)  # "john"
+```
 
 
 ## API Reference
 ### Lib0 Class
 <b>Initialization</b>
+```
 Lib0(data=None, root=None)
+```
 * data: Initial data (dict, list, or any other type)
 * root: Root Lib0 object (for internal use)
 
@@ -127,21 +142,30 @@ Lib0(data=None, root=None)
 * .dict(): Convert to dictionary
 
 ### Helper Functions
+```
 dict2lib0(data)
+```
 Recursively converts a nested dictionary to Lib0 objects.
+```
 data = {"a": {"b": {"c": 1}}}
 wrapped = dict2lib0(data)
 print(wrapped.a.b.c)  # 1
+```
 
+```
 lib02dict(lib_obj)
+```
 Recursively converts a Lib0 object back to a standard Python dictionary.
+```
 obj = Lib0({"x": 1, "y": {"z": 2}})
 regular_dict = lib02dict(obj)
 print(regular_dict)  # {"x": 1, "y": {"z": 2}}
+```
 
 
 ## Advanced Examples
 ### Configuration Management
+```
 config = Lib0()
 
 #Build configuration with dot notation
@@ -160,8 +184,10 @@ if config.database.credentials.username == "admin":
 config_dict = lib02dict(config)
 import json
 json.dump(config_dict, open("config.json", "w"))
+```
 
 ### Data Transformation Pipeline
+```
 #Process data with method chaining
 data = dict2lib0({
     "values": ["10", "20.5", "30", "not_a_number"]
@@ -174,17 +200,21 @@ numeric_values = [
 ]
 
 print(sum(numeric_values))  # 60.5
+```
 
 ### Last Value Tracking
+```
 root = Lib0()
 root.a.b.c = 10
 root.x.y.z = 20
 
 print(root._last)  # 20 (last assigned value)
+```
 
 
 ## Error Handling
 Lib0 provides clear error messages:
+```
 obj = Lib0("not_a_number")
 try:
     print(obj.int())
@@ -196,6 +226,7 @@ try:
     print(obj.dict())
 except TypeError as e:
     print(e)  # "Cannot convert list to dict."
+```
 
 
 ## Performance Considerations
@@ -210,6 +241,7 @@ except TypeError as e:
 * _last attribute tracks last assignment in the entire object tree
 
 ## Examples in the Wild
+```
 #API Response Wrapper
 response = dict2lib0(api_response)
 print(response.data.users[0].name)
@@ -227,6 +259,7 @@ def validate_user(user_data):
     assert user.age.int() >= 18, "Must be 18 or older"
     assert len(user.email.str()) > 0, "Email required"
     return True
+```
 
 
 ## ⚠️ Common Pitfalls: Auto-Creation Side Effects
@@ -234,6 +267,7 @@ def validate_user(user_data):
 Lib0's auto-creation feature (__getattr__) automatically creates nested dictionaries for non-existent attributes. While convenient, this can lead to unexpected type errors:
 
 ### Problem Scenario 1: Missing Attributes in Expressions
+```
 data = Lib0()
 data.x = 5  # Integer value
 
@@ -244,8 +278,10 @@ print(data.x + data.y)  # ❌ TypeError: unsupported operand type(s) for +: 'int
 #1. data.y → creates {} → wraps as Lib0({})
 #2. data.x + Lib0({}) → 5 + {
 #3. TypeError! Cannot add integer to dictionary
+```
 
 ### Problem Scenario 2: Function Call on Missing Attribute
+```
 config = Lib0()
 config.database.connect()  # ❌ AttributeError: 'Lib0' object is not callable
 
@@ -253,6 +289,7 @@ config.database.connect()  # ❌ AttributeError: 'Lib0' object is not callable
 #1. config.database doesn't exist → creates {} → wraps as Lib0({})
 #2. .connect() tries to call Lib0({}) as a function
 #3. Lib0 instances aren't callable → AttributeError
+```
 
 ### Why This Happens
 When you access a non-existent attribute:
