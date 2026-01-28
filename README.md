@@ -1,6 +1,8 @@
 # Lib0 - Python Dynamic Attribute Wrapper
 A lightweight Python library that provides dynamic attribute access and method chaining for dictionary-like objects. Lib0 wraps Python dictionaries (and other types) to enable dot-notation access while maintaining full compatibility with Python's built-in operators and functions.
 
+## Important : This readme might not be up to date, this is a snapshot
+
 ## Features
 * Dot Notation Access: Access nested dictionaries using dot syntax (obj.users.john.age)
 * Auto-creation: Automatically creates nested dictionaries when accessing non-existent keys
