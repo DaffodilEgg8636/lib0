@@ -1,301 +1,422 @@
-# Lib0 - Python Dynamic Attribute Wrapper
-A lightweight Python library that provides dynamic attribute access and method chaining for dictionary-like objects. Lib0 wraps Python dictionaries (and other types) to enable dot-notation access while maintaining full compatibility with Python's built-in operators and functions.
+# Lib0 : Dynamic Python Attribute Wrapper
+## Overview
+Lib0 is a Python wrapper class that provides JavaScript-style dot notation access to nested dictionaries and other data structures. It automatically creates missing nested dictionaries and provides comprehensive type conversion methods while maintaining full Python operator compatibility.
 
-## Important : This readme might not be up to date, this is a snapshot
-
-## Features
-* Dot Notation Access: Access nested dictionaries using dot syntax (obj.users.john.age)
-* Auto-creation: Automatically creates nested dictionaries when accessing non-existent keys
-* Type Conversion Methods: Built-in .int(), .float(), .str(), .bool(), .list(), .dict() methods
-* Full Operator Support: Supports all Python operators (+, -, *, /, comparisons, etc.)
-* Container Protocol: Implements __getitem__, __setitem__, __len__, __iter__ for dict/list-like behavior
-* Type Preserving: Wrapped objects maintain their original type behavior
-* Root Tracking: Maintains reference to root object for last-value access
+## Core Philosophy
+* Dot notation for intuitive access
+* Auto-creation of missing nested structures
+* Transparent wrapping - behaves like wrapped data
+* Full Python compatibility - all operators work
+* Type-safe conversions with clear error messages
 
 ## Installation
-No installation required! Simply copy the Lib0 class into your project:
-Copy the entire Lib0 class definition from above into your project
-
-## Quick Start
 ```
+# Copy the entire Lib0 class and helper functions into your project
 from lib0 import Lib0, dict2lib0, lib02dict
-
-#Create a new Lib0 object
-obj = Lib0()
-
-#Auto-create nested dictionaries
-obj.users.john.age = 30
-obj.users.john.city = "New York"
-
-print(obj.users.john.age)  # 30
-print(obj.users.john.city)  # "New York"
-
-#Convert existing dict to Lib0
-data = {"app": {"version": "1.0", "settings": {"debug": True}}}
-wrapped = dict2lib0(data)
-
-print(wrapped.app.version)  # "1.0"
-print(wrapped.app.settings.debug)  # True
 ```
 
-## Core Usage
-### Basic Attribute Access
+## 1. Basic Usage
+### Creating Objects
+```
+# Empty Lib0 object
+obj = Lib0()
+
+# From existing dict (non-recursive)
+obj = Lib0({"x": 1, "y": {"z": 2}})
+
+# From existing dict (recursive - preferred)
+obj = dict2lib0({"x": 1, "y": {"z": 2}})
+
+# With None handling
+obj = Lib0(None)                    # Creates empty dict {}
+obj = Lib0(None, PRESERVE_NONE=True)  # Creates Lib0(None) - rarely needed
+```
+
+### Attribute Access
 ```
 obj = Lib0()
 
-### Set values
+# Set values
 obj.name = "Lib0"
-obj.version = 1.0
-obj.meta.tags = ["python", "wrapper", "utility"]
-```
-
-### Get values
-```
-print(obj.name)  # "Lib0"
-print(obj.meta.tags[0])  # "python"
-```
-
-### Auto-creation of nested structures
-```
 obj.config.database.host = "localhost"
 obj.config.database.port = 5432
+
+# Get values
+print(obj.name)                    # "Lib0"
+print(obj.config.database.host)    # "localhost"
+
+# Auto-creation of nested dicts
+obj.a.b.c = "value"                # Creates a, b as empty dicts
 ```
 
-### Type Conversion Methods
+### Index Access (Brackets)
+```
+obj = Lib0()
+
+# Dict-style access
+obj["x"] = 1
+print(obj["x"])                    # 1
+
+# Auto-creation works here too
+print(obj["new"]["nested"])        # Creates and returns empty Lib0
+
+# Mixed notation
+obj.data["users"].john.age = 30
+```
+
+## 2. Type Conversion System
+### Mutation Methods (Change the value)
 ```
 obj = Lib0("42")
+obj._int()                         # obj._data becomes 42 (int)
+obj._float()                       # obj._data becomes 42.0 (float)
+obj._str()                         # obj._data becomes "42.0" (str)
 
-#Convert wrapped values
-print(obj.int())    # 42 (as integer)
-print(obj.float())  # 42.0 (as float)
-print(obj.str())    # "42" (as string)
-print(obj.bool())   # True (as boolean)
-
-#List and dict conversions
-obj = Lib0([1, 2, 3])
-print(obj.list())  # [1, 2, 3]
-
-obj = Lib0({"a": 1, "b": 2})
-print(obj.dict())  # {"a": 1, "b": 2}
+# Chaining supported
+obj = Lib0("3.14")._float()._int() # obj._data becomes 3 (int)
 ```
 
-### Operator Support
+### Conversion Methods (Return converted value)
+```
+obj = Lib0("42")
+print(obj.int())                   # 42 (returns int)
+print(obj.float())                 # 42.0 (returns float)
+print(obj.str())                   # "42" (returns str)
+print(obj.bool())                  # True (returns bool)
+```
+
+### Python Protocol Conversions
+```
+obj = Lib0("42")
+print(int(obj))                    # 42 (calls __int__)
+print(float(obj))                  # 42.0 (calls __float__)
+print(str(obj))                   # "42" (calls __str__)
+print(bool(obj))                  # True (calls __bool__)
+```
+
+### List and Dict Conversions
+```
+# To list
+obj = Lib0((1, 2, 3))
+print(obj.list())                  # [1, 2, 3]
+
+obj = Lib0("hello")
+print(obj.list())                  # ['h', 'e', 'l', 'l', 'o']
+
+# To dict
+obj = Lib0({"a": 1, "b": 2})
+print(obj.dict())                  # {"a": 1, "b": 2}
+```
+
+## 3. Container Operations
+### Sequence Types Support
+```
+# Lists
+obj = Lib0([10, 20, 30, 40, 50])
+print(obj[1])                      # 20
+print(obj[1:4])                    # [20, 30, 40]
+print(obj[-1])                     # 50
+
+# Strings
+obj = Lib0("hello")
+print(obj[1])                      # 'e'
+print(obj[1:4])                    # "ell"
+
+# Tuples, ranges, bytes
+obj = Lib0((1, 2, 3))
+print(obj[0])                      # 1
+
+obj = Lib0(range(10))
+print(obj[5])                      # 5
+print(obj[2:5])                    # range(2, 5)
+```
+
+### Mutable vs Immutable
+```
+# Mutable - can modify
+obj = Lib0([1, 2, 3])
+obj[0] = 99                        # OK: [99, 2, 3]
+obj[1:3] = [88, 77]                # OK: [99, 88, 77]
+
+obj = Lib0(bytearray(b"abc"))
+obj[0] = 122                       # OK: bytearray(b"zbc")
+
+# Immutable - cannot modify
+obj = Lib0("hello")
+# obj[0] = "H"                     # TypeError: 'str' object does not support item assignment
+
+obj = Lib0((1, 2, 3))
+# obj[0] = 99                      # TypeError: 'tuple' object does not support item assignment
+
+obj = Lib0(b"abc")
+# obj[0] = 122                     # TypeError: 'bytes' object does not support item assignment
+```
+
+### Container Methods
+```
+obj = Lib0({"a": 1, "b": 2, "c": 3})
+
+print(len(obj))                    # 3
+print("a" in obj)                  # True
+
+# Iteration
+for key in obj:
+    print(key, obj[key])           # a 1, b 2, c 3
+
+# Deletion
+del obj["b"]                       # Removes key "b"
+del obj.a                          # Removes attribute "a"
+```
+
+## 4. Operator Overloading
+### Arithmetic Operations
 ```
 a = Lib0(10)
 b = Lib0(5)
 
-#Arithmetic operations
-print(a + b)   # 15
-print(a - b)   # 5
-print(a * b)   # 50
-print(a / b)   # 2.0
+print(a + b)                       # 15
+print(a - b)                       # 5
+print(a * b)                       # 50
+print(a / b)                       # 2.0
+print(a // b)                      # 2
+print(a % b)                       # 0
+print(a ** b)                      # 100000
 
-#Comparisons
-print(a > b)   # True
-print(a == 10) # True
-
-#In-place operations
-a += 5
-print(a)  # 15
+# In-place operations
+a += 5                            # a becomes Lib0(15)
+a *= 2                            # a becomes Lib0(30)
 ```
 
-### Dictionary-like Behavior
+### Comparison Operations
 ```
-obj = Lib0({"users": {"john": {"age": 30}}})
+a = Lib0(10)
+b = Lib0(5)
 
-#Square bracket access
-print(obj["users"]["john"]["age"])  # 30
-
-#Mixed notation
-print(obj.users["john"].age)  # 30
-
-#Container methods
-print(len(obj.users))  # 1
-print("john" in obj.users)  # True
-
-#Iteration
-for key in obj.users:
-    print(key)  # "john"
+print(a > b)                       # True
+print(a < b)                       # False
+print(a == 10)                     # True
+print(a != b)                      # True
+print(a >= 10)                     # True
+print(a <= 20)                     # True
 ```
 
-
-## API Reference
-### Lib0 Class
-<b>Initialization</b>
+### Unary Operations
 ```
-Lib0(data=None, root=None)
-```
-* data: Initial data (dict, list, or any other type)
-* root: Root Lib0 object (for internal use)
-
-### Special Methods
-<b>All Python special methods are implemented:</b>
-* Arithmetic: __add__, __sub__, __mul__, __div__, etc.
-* Comparison: __eq__, __lt__, __gt__, etc.
-* Container: __getitem__, __setitem__, __len__, __iter__
-* Type Conversion: __int__, __float__, __str__, __bool__
-
-<b>Conversion Methods</b>
-* .int(): Convert to integer
-* .float(): Convert to float
-* .str(): Convert to string
-* .bool(): Convert to boolean
-* .list(): Convert to list
-* .dict(): Convert to dictionary
-
-### Helper Functions
-```
-dict2lib0(data)
-```
-Recursively converts a nested dictionary to Lib0 objects.
-```
-data = {"a": {"b": {"c": 1}}}
-wrapped = dict2lib0(data)
-print(wrapped.a.b.c)  # 1
+obj = Lib0(5)
+print(-obj)                        # -5
+print(+obj)                        # 5
+print(abs(Lib0(-5)))               # 5
+print(~Lib0(5))                    # -6 (bitwise NOT)
 ```
 
+## 5. Special Features
+### _last Tracking
 ```
-lib02dict(lib_obj)
-```
-Recursively converts a Lib0 object back to a standard Python dictionary.
-```
-obj = Lib0({"x": 1, "y": {"z": 2}})
-regular_dict = lib02dict(obj)
-print(regular_dict)  # {"x": 1, "y": {"z": 2}}
-```
+obj = Lib0()
+obj.x = 10
+print(obj._last)                   # 10 (last assigned value)
 
+obj.y.z = {"a": 1}
+print(obj._last)                   # {"a": 1} (last assigned value)
 
-## Advanced Examples
-### Configuration Management
-```
-config = Lib0()
-
-#Build configuration with dot notation
-config.app.name = "MyApp"
-config.app.version = "1.0.0"
-config.database.host = "localhost"
-config.database.port = 5432
-config.database.credentials.username = "admin"
-config.database.credentials.password = "secret"
-
-#Access nested values easily
-if config.database.credentials.username == "admin":
-    print("Admin access")
-
-#Convert to dict for serialization
-config_dict = lib02dict(config)
-import json
-json.dump(config_dict, open("config.json", "w"))
+obj.a.b.c = "deep"
+print(obj._last)                   # "deep"
 ```
 
-### Data Transformation Pipeline
-```
-#Process data with method chaining
-data = dict2lib0({
-    "values": ["10", "20.5", "30", "not_a_number"]
-})
-
-#Convert and filter numeric values
-numeric_values = [
-    val.float() for val in data.values 
-    if val.float()  # Will raise TypeError for non-convertible
-]
-
-print(sum(numeric_values))  # 60.5
-```
-
-### Last Value Tracking
+### Root Reference System
 ```
 root = Lib0()
-root.a.b.c = 10
-root.x.y.z = 20
+branch = Lib0({"x": 1}, ROOT=root)
+leaf = Lib0({"y": 2}, ROOT=root)
 
-print(root._last)  # 20 (last assigned value)
+leaf.value = 100
+print(root._last)                  # 100 (updated through root chain)
 ```
 
+## 6. Helper Functions
+### dict2lib0() - Recursive Conversion
+```
+data = {"app": {"name": "MyApp", "version": "1.0", "settings": {"debug": True}}}
+obj = dict2lib0(data)
 
-## Error Handling
-Lib0 provides clear error messages:
+print(obj.app.name)                # "MyApp"
+print(obj.app.settings.debug)      # True
+print(type(obj.app.settings))      # <class 'Lib0'>
+```
+
+### lib02dict() - Reverse Conversion
+```
+obj = Lib0()
+obj.config.host = "localhost"
+obj.config.port = 8080
+
+data = lib02dict(obj)
+print(data)                        # {"config": {"host": "localhost", "port": 8080}}
+print(type(data))                  # <class 'dict'>
+```
+
+### Round-trip Conversion
+```
+original = {"a": {"b": {"c": [1, 2, 3]}}}
+wrapped = dict2lib0(original)
+unwrapped = lib02dict(wrapped)
+print(original == unwrapped)       # True
+```
+
+## 7. Advanced Usage
+### Configuration Management
+```
+config = dict2lib0({
+    "app": {
+        "name": "MyApp",
+        "version": "1.0.0"
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "credentials": {
+            "username": "admin",
+            "password": "secret"
+        }
+    }
+})
+
+# Easy access
+if config.database.credentials.username == "admin":
+    print("Admin access granted")
+
+# Dynamic updates
+config.database.pool_size = 20
+config.features.new_feature.enabled = True
+```
+
+### Data Validation Pipeline
+```
+def process_user_data(raw_data):
+    user = dict2lib0(raw_data)
+    
+    # Type conversions with validation
+    user.age = user.age.int()      # Convert to int
+    if user.age < 18:
+        raise ValueError("Must be 18 or older")
+    
+    user.email = user.email.str().lower().strip()
+    if "@" not in user.email:
+        raise ValueError("Invalid email")
+    
+    return lib02dict(user)
+```
+
+### API Response Wrapping
+```
+import requests
+
+response = requests.get("https://api.example.com/users/1")
+data = dict2lib0(response.json())
+
+print(f"User: {data.user.name}")
+print(f"Email: {data.user.email}")
+print(f"Joined: {data.user.created_at}")
+
+# Safe access with defaults
+posts = data.user.recent_posts or []
+```
+
+### Context Manager Usage
+```
+with Lib0() as session:
+    session.user.id = 123
+    session.user.name = "John"
+    session.cart.items = ["item1", "item2"]
+    
+    # __exit__ called automatically here
+```
+
+## 8. Error Handling
+### Clear Error Messages
 ```
 obj = Lib0("not_a_number")
 try:
-    print(obj.int())
+    obj._int()
 except TypeError as e:
     print(e)  # "Cannot convert str to int."
 
 obj = Lib0([1, 2, 3])
 try:
-    print(obj.dict())
+    obj.dict()
 except TypeError as e:
     print(e)  # "Cannot convert list to dict."
 ```
 
-
-## Performance Considerations
-* Overhead: Lib0 adds minimal overhead compared to raw dictionaries
-* Memory: Each Lib0 object maintains reference to wrapped data and root
-* Use Cases: Best for configuration, data transformation, and APIs where dot notation improves readability
-
-## Limitations
-* Only works with dictionary-like structures for attribute access
-* Auto-creation only works with dictionaries (not lists or other types)
-* Not designed for high-performance numeric computing
-* _last attribute tracks last assignment in the entire object tree
-
-## Examples in the Wild
+### Index Errors
 ```
-#API Response Wrapper
-response = dict2lib0(api_response)
-print(response.data.users[0].name)
-
-#Configuration Builder
-cfg = Lib0()
-cfg.server.host = "0.0.0.0"
-cfg.server.port = 8000
-cfg.features.auth.enabled = True
-cfg.features.cache.ttl = 3600
-
-#Data Validation
-def validate_user(user_data):
-    user = Lib0(user_data)
-    assert user.age.int() >= 18, "Must be 18 or older"
-    assert len(user.email.str()) > 0, "Email required"
-    return True
+obj = Lib0([1, 2, 3])
+try:
+    print(obj[10])
+except IndexError as e:
+    print(e)  # "Index out of range: 10, length: 3"
 ```
 
-
-## ⚠️ Common Pitfalls: Auto-Creation Side Effects
-### The "Undefined to Defined" Problem
-Lib0's auto-creation feature (__getattr__) automatically creates nested dictionaries for non-existent attributes. While convenient, this can lead to unexpected type errors:
-
-### Problem Scenario 1: Missing Attributes in Expressions
+### Attribute Errors
 ```
-data = Lib0()
-data.x = 5  # Integer value
-
-#data.y doesn't exist - auto-creates as empty dict wrapped in Lib0
-print(data.x + data.y)  # ❌ TypeError: unsupported operand type(s) for +: 'int' and 'dict'
-
-#What happens:
-#1. data.y → creates {} → wraps as Lib0({})
-#2. data.x + Lib0({}) → 5 + {
-#3. TypeError! Cannot add integer to dictionary
+obj = Lib0()
+try:
+    print(obj.nonexistent.deep.value)
+except AttributeError as e:
+    print(e)  # "No attribute 'nonexistent'"
 ```
 
-### Problem Scenario 2: Function Call on Missing Attribute
+## 9. Performance Considerations
+### When to Use Lib0
+* Good for: Configuration, API responses, data transformation, prototyping
+* Less ideal for: High-performance numeric computing, large-scale data processing
+
+### Memory Usage
+* Each value is wrapped in a Lib0 object
+* Root tracking adds minor overhead
+* Use lib02dict() for serialization/storage
+
+## 10. Complete API Reference
+### Lib0 Class Methods
+
+* __init__(DATA=None, ROOT=None, PRESERVE_NONE=False)
+* _int(), _float(), _bool(), _str(), _list(), _dict() - Mutation methods
+* int(), float(), bool(), str(), list(), dict() - Conversion methods
+* repr(), format() - Representation methods
+
+### Special Methods (Dunder)
+* All arithmetic: __add__, __sub__, __mul__, etc.
+* All comparison: __eq__, __lt__, __gt__, etc.
+* Container: __getitem__, __setitem__, __len__, __iter__
+* Conversion: __int__, __float__, __str__, __bool__
+
+### Helper Functions
+* dict2lib0(data) - Recursively convert dict to Lib0
+* lib02dict(lib_obj) - Recursively convert Lib0 to dict
+
+## 11. Examples Repository
+### Quick Examples
 ```
+# 1. Build nested config
 config = Lib0()
-config.database.connect()  # ❌ AttributeError: 'Lib0' object is not callable
+config.server.host = "0.0.0.0"
+config.server.port = 8000
+config.features.api.enabled = True
 
-#What happens:
-#1. config.database doesn't exist → creates {} → wraps as Lib0({})
-#2. .connect() tries to call Lib0({}) as a function
-#3. Lib0 instances aren't callable → AttributeError
+# 2. Process form data
+form = dict2lib0(request.form)
+user_age = form.age.int()
+user_name = form.name.str().title()
+
+# 3. JSON manipulation
+import json
+data = Lib0(json.loads(json_string))
+data.timestamp = data.timestamp.int()  # Convert string timestamp to int
+
+# 4. Data transformation pipeline
+results = [
+    item.score.float() * 1.1  # 10% bonus
+    for item in data.scores
+    if item.score.float() > 50
+]
 ```
-
-### Why This Happens
-When you access a non-existent attribute:
-1. Lib0 automatically creates an empty dictionary for that key
-2. Wraps it in a new Lib0 instance
-3. Returns this empty Lib0-wrapped dict
-The result: You get a valid Lib0 object instead of an AttributeError, but it's probably not what you expected for the operation you're trying to perform.
