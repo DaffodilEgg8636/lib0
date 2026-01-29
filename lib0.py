@@ -1,51 +1,45 @@
-
 class Lib0:
-    def __init__(self, data=None, root=None):
-        self._data = data if data is not None else {}
+    def __init__(self, DATA=None, ROOT=None, PRESERVE_NONE: bool=False) -> None:
+        DATA = {} if DATA is None and not PRESERVE_NONE else DATA
+        if isinstance(DATA, Lib0):
+            self._data = DATA._data
+        else:
+            self._data = DATA
         self._last = None
-        self._root = self if root is None else root
+        self._root = self if ROOT is None else ROOT
 
-    def __getattr__(self, key):
-        if key == "_last":
+    def __getattr__(self, KEY):
+        if KEY == "_last":
             return self._root._last
-
-        if hasattr(self._data, key):
-            attr = getattr(self._data, key)
-            if callable(attr):
-                return attr  # Let method like append(), pop() work
-            else:
-                return attr
-
+        if hasattr(self._data, KEY):
+            return getattr(self._data, KEY)
         if isinstance(self._data, dict):
-            if key not in self._data:
+            if KEY not in self._data:
                 # Auto-create a new dict (wrapped by Lib0) if key does not exist
-                self._data[key] = {}
-            value = self._data[key]
+                self._data[KEY] = {}
+            value = self._data[KEY]
             if isinstance(value, dict):
-                wrapped = Lib0(value, root=self._root)
-                self._data[key] = wrapped
+                wrapped = Lib0(value, ROOT=self._root)
+                self._data[KEY] = wrapped
                 return wrapped
             return value
-        raise AttributeError(f"No attribute '{key}'")
+        raise AttributeError(f"No attribute '{KEY}'")
 
-    def __setattr__(self, key, value):
-        if key.startswith('_'):
-            super().__setattr__(key, value)
+    def __setattr__(self, KEY: str, VALUE) -> None:
+        if KEY.startswith('_'):
+            super().__setattr__(KEY, VALUE)
         elif isinstance(self._data, dict):
-            if isinstance(value, dict):
-                self._data[key] = Lib0(value, root=self._root)
-            elif not isinstance(value, Lib0):
-                self._data[key] = Lib0(value, root=self._root)
-            else:
-                self._data[key] = value
-            super(Lib0, self._root).__setattr__('_last', self._data[key])
+            if isinstance(VALUE, dict):
+                self._data[KEY] = Lib0(VALUE, ROOT=self._root)
+            elif not isinstance(VALUE, Lib0): 
+                self._data[KEY] = Lib0(VALUE, ROOT=self._root, PRESERVE_NONE=True)
+            else: # if VALUE is already a Lib0
+                self._data[KEY] = VALUE
+            object.__setattr__(self._root, '_last', self._data[KEY])
         else:
-            raise AttributeError(f"Cannot set attribute '{key}' on non-dict value.")
+            raise AttributeError(f"Cannot set attribute '{KEY}' on non-dict value.")
 
-    def __repr__(self):
-        return f"Lib0({self._data})"
-
-    def __delattr__(self, key):
+    def __delattr__(self, key) -> None:
         if key.startswith('_'):
             super().__delattr__(key)
         elif isinstance(self._data, dict) and key in self._data:
@@ -54,240 +48,460 @@ class Lib0:
             raise AttributeError(f"No such attribute '{key}' to delete.")
 
 
-    def int(self):
+    def _int(self):
         try:
-            return int(self._data)
+            self._data = int(self._data)
+            return self
         except (ValueError, TypeError):
             raise TypeError(f"Cannot convert {type(self._data).__name__} to int.")
 
-    def float(self):
+    def _float(self):
         try:
-            return float(self._data)
+            self._data = float(self._data)
+            return self
         except (ValueError, TypeError):
             raise TypeError(f"Cannot convert {type(self._data).__name__} to float.")
 
-    def bool(self):
+    def _bool(self):
         try:
-            return bool(self._data)
+            self._data = bool(self._data)
+            return self
         except Exception:
             raise TypeError(f"Cannot convert {type(self._data).__name__} to bool.")
 
+    def _str(self):
+        try:
+            self._data = str(self._data)
+            return self
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to str.")
+
+    def _list(self):
+        try:
+            self._data = list(self._data)
+            return self
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to list.")
+
+    def _dict(self):
+        try:
+            self._data = dict(self._data)
+            return self
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to dict.")
+
+
+
+    # String & Representation
+    def __str__(self):
+        try:
+            return str(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to str.")
+
+    def __repr__(self):
+        try:
+            return repr(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to repr.")
+
+    def __format__(self, format_spec):
+        try:
+            return format(self._data, format_spec)
+        except Exception:
+            raise TypeError(f"Cannot format {type(self._data).__name__} with format spec '{format_spec}'.")
+
+    # Conversions by attribute
     def str(self):
         try:
             return str(self._data)
         except Exception:
             raise TypeError(f"Cannot convert {type(self._data).__name__} to str.")
 
-    def list(self):
-        if isinstance(self._data, (list, tuple, set, dict, str)):
-            return list(self._data)
-        raise TypeError(f"Cannot convert {type(self._data).__name__} to list.")
+    def repr(self):
+        try:
+            return repr(self)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to repr.")
 
-    def dict(self):
-        if isinstance(self._data, dict):
-            return dict(self._data)
-        raise TypeError(f"Cannot convert {type(self._data).__name__} to dict.")
+    def format(self, format_spec):
+        try:
+            return format(self._data, format_spec)
+        except Exception:
+            raise TypeError(f"Cannot format {type(self._data).__name__} with format spec '{format_spec}'.")
+    
+    def bool(self):
+        try:
+            return bool(self._data)
+        except Exception:
+            return False
 
+    def int(self):
+        try:
+            return int(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to int.")
 
+    def float(self):
+        try:
+            return float(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to float.")
 
-    # String & Representation
-    def __str__(self):
-        return str(self._data)
+    def complex(self):
+        try:
+            return complex(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to complex.")
 
-    def __repr__(self):
-        return repr(self._data)
+    def bytes(self):
+        try:
+            return bytes(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to bytes.")
 
-    def __format__(self, format_spec):
-        return format(self._data, format_spec)
+    def hash(self):
+        try:
+            return hash(self._data)
+        except Exception:
+            raise TypeError(f"Cannot hash {type(self._data).__name__}.")
 
-    # Conversions
+    # Conversion by method call
     def __bool__(self):
-        return bool(self._data)
+        try:
+            return bool(self._data)
+        except Exception:
+            return False
 
     def __int__(self):
-        return int(self._data)
+        try:
+            return int(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to int.")
 
     def __float__(self):
-        return float(self._data)
+        try:
+            return float(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to float.")
 
     def __complex__(self):
-        return complex(self._data)
+        try:
+            return complex(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to complex.")
 
     def __bytes__(self):
-        return bytes(self._data)
+        try:
+            return bytes(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to bytes.")
 
     def __hash__(self):
-        return hash(self._data)
-
+        try:
+            return hash(self._data)
+        except Exception:
+            raise TypeError(f"Cannot hash {type(self._data).__name__}.")
+    
     # Comparison Operators
     def __eq__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data == other_val
+        try:
+            return self._data == other_val
+        except Exception:
+            raise TypeError(f"Cannot compare {type(self._data).__name__} with {type(other_val).__name__}.")
 
     def __ne__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data != other_val
+        try:
+            return self._data != other_val
+        except Exception:
+            raise TypeError(f"Cannot compare {type(self._data).__name__} with {type(other_val).__name__}.")
 
     def __lt__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data < other_val
+        try:
+            return self._data < other_val
+        except Exception:
+            raise TypeError(f"Cannot compare {type(self._data).__name__} with {type(other_val).__name__}.")
 
     def __le__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data <= other_val
+        try:
+            return self._data <= other_val
+        except Exception:
+            raise TypeError(f"Cannot compare {type(self._data).__name__} with {type(other_val).__name__}.")
 
     def __gt__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data > other_val
+        try:
+            return self._data > other_val
+        except Exception:
+            raise TypeError(f"Cannot compare {type(self._data).__name__} with {type(other_val).__name__}.")
 
     def __ge__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data >= other_val
+        try:
+            return self._data >= other_val
+        except Exception:
+            raise TypeError(f"Cannot compare {type(self._data).__name__} with {type(other_val).__name__}.")
 
     # Arithmetic Operators
     def __add__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data + other_val
+        try:
+            return self._data + other_val
+        except Exception:
+            raise TypeError(f"Cannot add {type(self._data).__name__} and {type(other_val).__name__}.")
 
     def __sub__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data - other_val
+        try:
+            return self._data - other_val
+        except Exception:
+            raise TypeError(f"Cannot subtract {type(other_val).__name__} from {type(self._data).__name__}.")
 
     def __mul__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data * other_val
+        try:
+            return self._data * other_val
+        except Exception:
+            raise TypeError(f"Cannot multiply {type(self._data).__name__} and {type(other_val).__name__}.")
 
     def __truediv__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data / other_val
+        try:
+            return self._data / other_val
+        except Exception:
+            raise TypeError(f"Cannot divide {type(self._data).__name__} by {type(other_val).__name__}.")
 
     def __floordiv__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data // other_val
+        try:
+            return self._data // other_val
+        except Exception:
+            raise TypeError(f"Cannot floor divide {type(self._data).__name__} by {type(other_val).__name__}.")
 
     def __mod__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return self._data % other_val
+        try:
+            return self._data % other_val
+        except Exception:
+            raise TypeError(f"Cannot compute modulus of {type(self._data).__name__} and {type(other_val).__name__}.")
 
     def __pow__(self, other, modulo=None):
         other_val = other._data if isinstance(other, Lib0) else other
-        if modulo is None:
-            return pow(self._data, other_val)
-        else:
-            return pow(self._data, other_val, modulo)
+        try:
+            if modulo is None:
+                return pow(self._data, other_val)
+            else:
+                return pow(self._data, other_val, modulo)
+        except Exception:
+            raise TypeError(f"Cannot compute power of {type(self._data).__name__} and {type(other_val).__name__}.")
 
     # Right-side arithmetic operators
     def __radd__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return other_val + self._data
+        try:
+            return other_val + self._data
+        except Exception:
+            raise TypeError(f"Cannot add {type(other_val).__name__} and {type(self._data).__name__}.")
 
     def __rsub__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return other_val - self._data
+        try:
+            return other_val - self._data
+        except Exception:
+            raise TypeError(f"Cannot subtract {type(self._data).__name__} from {type(other_val).__name__}.")
 
     def __rmul__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return other_val * self._data
+        try:
+            return other_val * self._data
+        except Exception:
+            raise TypeError(f"Cannot multiply {type(other_val).__name__} and {type(self._data).__name__}.")
 
     def __rtruediv__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return other_val / self._data
+        try:
+            return other_val / self._data
+        except Exception:
+            raise TypeError(f"Cannot divide {type(other_val).__name__} by {type(self._data).__name__}.")
 
     def __rfloordiv__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return other_val // self._data
+        try:
+            return other_val // self._data
+        except Exception:
+            raise TypeError(f"Cannot floor divide {type(other_val).__name__} by {type(self._data).__name__}.")
 
     def __rmod__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return other_val % self._data
+        try:
+            return other_val % self._data
+        except Exception:
+            raise TypeError(f"Cannot compute modulus of {type(other_val).__name__} and {type(self._data).__name__}.")
 
     def __rpow__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        return pow(other_val, self._data)
+        try:
+            return pow(other_val, self._data)
+        except Exception:
+            raise TypeError(f"Cannot compute power of {type(other_val).__name__} and {type(self._data).__name__}.")
 
     # In-place arithmetic operators
     def __iadd__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        self._data += other_val
-        return self
+        try:
+            self._data += other_val
+            return self
+        except Exception:
+            raise TypeError(f"Cannot add {type(other_val).__name__} to {type(self._data).__name__}.")
 
     def __isub__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        self._data -= other_val
-        return self
+        try:
+            self._data -= other_val
+            return self
+        except Exception:
+            raise TypeError(f"Cannot subtract {type(other_val).__name__} from {type(self._data).__name__}.")
 
     def __imul__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        self._data *= other_val
-        return self
+        try:
+            self._data *= other_val
+            return self
+        except Exception:
+            raise TypeError(f"Cannot multiply {type(self._data).__name__} by {type(other_val).__name__}.")
 
     def __itruediv__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        self._data /= other_val
-        return self
+        try:
+            self._data /= other_val
+            return self
+        except Exception:
+            raise TypeError(f"Cannot divide {type(self._data).__name__} by {type(other_val).__name__}.")
 
     def __ifloordiv__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        self._data //= other_val
-        return self
+        try:
+            self._data //= other_val
+            return self
+        except Exception:
+            raise TypeError(f"Cannot floor divide {type(self._data).__name__} by {type(other_val).__name__}.")
 
     def __imod__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        self._data %= other_val
-        return self
+        try:
+            self._data %= other_val
+            return self
+        except Exception:
+            raise TypeError(f"Cannot compute modulus of {type(self._data).__name__} and {type(other_val).__name__}.")
 
     def __ipow__(self, other):
         other_val = other._data if isinstance(other, Lib0) else other
-        self._data **= other_val
-        return self
+        try:
+            self._data **= other_val
+            return self
+        except Exception:
+            raise TypeError(f"Cannot compute power of {type(self._data).__name__} and {type(other_val).__name__}.")
 
     # Unary operators
     def __neg__(self):
-        return -self._data
+        try:
+            return -self._data
+        except Exception:
+            raise TypeError(f"Cannot negate {type(self._data).__name__}.")
 
     def __pos__(self):
-        return +self._data
+        try:
+            return +self._data
+        except Exception:
+            raise TypeError(f"Cannot apply unary positive to {type(self._data).__name__}.")
 
     def __abs__(self):
-        return abs(self._data)
+        try:
+            return abs(self._data)
+        except Exception:
+            raise TypeError(f"Cannot compute absolute value of {type(self._data).__name__}.")
 
     def __invert__(self):
-        return ~self._data
+        try:
+            return ~self._data
+        except Exception:
+            raise TypeError(f"Cannot invert {type(self._data).__name__}.")
 
     # Container methods (if you want to support indexing like dict/list)
     def __len__(self):
         return len(self._data)
 
-    def __getitem__(self, key):
-        value = self._data[key]
-        if isinstance(value, dict):
-            return Lib0(value)
-        return value
-
-    def __setitem__(self, key, value):
-        if isinstance(value, dict):
-            self._data[key] = Lib0(value)
+    def __getitem__(self, KEY):
+        if isinstance(self._data, dict):
+            if KEY not in self._data:
+                self._data[KEY] = Lib0({}, ROOT=self._root)
+            return self._data[KEY]
+        elif isinstance(self._data, (list, str, tuple, range, bytes, bytearray)):
+            if isinstance(KEY, int) and KEY < len(self._data) and KEY >= -len(self._data):
+                return self._data[KEY]
+            elif isinstance(KEY, slice):
+                return self._data[KEY]
+            else:
+                raise IndexError(f"Index out of range: {KEY}, length: {len(self._data)}")
         else:
-            self._data[key] = value
+            try:
+                return self._data[KEY]
+            except Exception:
+                raise TypeError(f"Object {self._data} of type {type(self._data).__name__} does not support indexing.")
 
-    def __delitem__(self, key):
-        del self._data[key]
+    def __setitem__(self, KEY, VALUE):
+        if isinstance(self._data, dict):
+            if isinstance(VALUE, dict):
+                self._data[KEY] = Lib0(VALUE, ROOT=self._root)
+            elif not isinstance(VALUE, Lib0):
+                self._data[KEY] = Lib0(VALUE, ROOT=self._root, PRESERVE_NONE=True)
+            else:
+                self._data[KEY] = VALUE
+            object.__setattr__(self._root, '_last', self._data[KEY])
+        elif isinstance(self._data, (list, bytearray)):
+            if isinstance(KEY, int) and KEY < len(self._data) and KEY >= -len(self._data):
+                self._data[KEY] = VALUE
+            elif isinstance(KEY, slice):
+                self._data[KEY] = VALUE
+            else:
+                raise IndexError(f"Index out of range: {KEY}, length: {len(self._data)}")
+        else:
+            try:
+                self._data[KEY] = VALUE
+            except Exception:
+                raise TypeError(f"Object {self._data} of type {type(self._data).__name__} does not support item assignment.")
+
+    def __delitem__(self, KEY):
+        try:
+            del self._data[KEY]
+        except Exception:
+            raise TypeError(f"Object {self._data} of type {type(self._data).__name__} has no item for key: {KEY}")
 
     def __contains__(self, item):
-        return item in self._data
+        try:
+            return item in self._data
+        except Exception:
+            raise TypeError(f"Object {self._data} of type {type(self._data).__name__} does not support 'in' operator.")
 
     # Iterator support
     def __iter__(self):
-        return iter(self._data)
-
-    def __next__(self):
-        return next(self._data)
+        try:
+            return iter(self._data)
+        except Exception:
+            raise TypeError(f"Object {self._data} of type {type(self._data).__name__} is not iterable.")
 
     # Context management (optional)
     def __enter__(self):
-        return self
+        try:
+            return self
+        except Exception:
+            raise TypeError(f"Object {self._data} of type {type(self._data).__name__} does not support context management.")
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
     def __round__(self, ndigits=None):
@@ -308,10 +522,11 @@ class Lib0:
 def dict2lib0(data):
     if isinstance(data, dict):
         return Lib0({k: dict2lib0(v) for k, v in data.items()})
+    elif isinstance(data, Lib0):
+        return data
     else:
         # wrap every non-dict value into Lib0 so it supports .int(), .float(), etc.
         return Lib0(data)
-
 
 
 
@@ -320,8 +535,10 @@ def lib02dict(lib_obj):
     Recursively convert a Lib0 object into a standard Python dict.
     """
     result = {}
+    if not isinstance(lib_obj._data, dict):
+        raise TypeError(f"Cannot convert Lib0 with {type(lib_obj._data).__name__} to dict")
     for key, value in lib_obj._data.items():
-        if isinstance(value, Lib0):
+        if isinstance(value._data, dict):
             result[key] = lib02dict(value)
         else:
             result[key] = value
