@@ -1,6 +1,32 @@
+def dict2lib0(data):
+    if isinstance(data, dict):
+        return Lib0({k: dict2lib0(v) for k, v in data.items()})
+    elif isinstance(data, Lib0):
+        return data
+    else:
+        # wrap every non-dict value into Lib0 so it supports .int(), .float(), etc.
+        return Lib0(data)
+
+
+
+def lib02dict(lib_obj):
+    """
+    Recursively convert a Lib0 object into a standard Python dict.
+    """
+    result = {}
+    if not isinstance(lib_obj._data, dict):
+        raise TypeError(f"Cannot convert Lib0 with {type(lib_obj._data).__name__} to dict")
+    for key, value in lib_obj._data.items():
+        if isinstance(value._data, dict):
+            result[key] = lib02dict(value)
+        else:
+            result[key] = value
+    return result
+
+
 class Lib0:
-    def __init__(self, DATA=None, ROOT=None, PRESERVE_NONE: bool=False) -> None:
-        DATA = {} if DATA is None and not PRESERVE_NONE else DATA
+    def __init__(self, DATA=None, ROOT=None, PRESERVE_NONE: bool=False, R: bool=False) -> None:
+        DATA = {} if DATA is None and not PRESERVE_NONE else (dict2lib0(DATA) if R else DATA)
         if isinstance(DATA, Lib0):
             self._data = DATA._data
         else:
@@ -165,6 +191,21 @@ class Lib0:
             return hash(self._data)
         except Exception:
             raise TypeError(f"Cannot hash {type(self._data).__name__}.")
+
+    def list(self):
+        try:
+            return list(self._data)
+        except Exception:
+            raise TypeError(f"Cannot convert {type(self._data).__name__} to list.")
+
+    def dict(self, R=False):
+        if not R:
+            try:
+                return dict(self._data)
+            except Exception:
+                raise TypeError(f"Cannot convert {type(self._data).__name__} to dict.")
+        else:
+            return lib02dict(self)
 
     # Conversion by method call
     def __bool__(self):
@@ -519,27 +560,3 @@ class Lib0:
 
 
 
-def dict2lib0(data):
-    if isinstance(data, dict):
-        return Lib0({k: dict2lib0(v) for k, v in data.items()})
-    elif isinstance(data, Lib0):
-        return data
-    else:
-        # wrap every non-dict value into Lib0 so it supports .int(), .float(), etc.
-        return Lib0(data)
-
-
-
-def lib02dict(lib_obj):
-    """
-    Recursively convert a Lib0 object into a standard Python dict.
-    """
-    result = {}
-    if not isinstance(lib_obj._data, dict):
-        raise TypeError(f"Cannot convert Lib0 with {type(lib_obj._data).__name__} to dict")
-    for key, value in lib_obj._data.items():
-        if isinstance(value._data, dict):
-            result[key] = lib02dict(value)
-        else:
-            result[key] = value
-    return result
