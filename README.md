@@ -1,4 +1,7 @@
 # Lib0 : Dynamic Python Attribute Wrapper
+
+## **Important : This readme might not be up to date, this is the snapshot branch, use its code only if you know what you're doing** 
+
 ## Overview
 Lib0 is a Python wrapper class that provides JavaScript-style dot notation access to nested dictionaries and other data structures. It automatically creates missing nested dictionaries and provides comprehensive type conversion methods while maintaining full Python operator compatibility.
 
