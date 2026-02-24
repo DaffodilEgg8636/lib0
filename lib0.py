@@ -20,7 +20,7 @@ def lib02dict(lib_obj):
         if isinstance(value._data, dict):
             result[key] = lib02dict(value)
         else:
-            result[key] = value
+            result[key] = value._data
     return result
 
 
